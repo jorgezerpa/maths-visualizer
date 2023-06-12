@@ -8,12 +8,15 @@ body {
   /* overflow: hidden; */
 }
 
-/* #canvas {
-  display: block;
-  position: absolute;
-  top: 0;
-  left: 0;
-  bottom: 0;
-  right: 0;
-  background-color: green;
-} */
+
+/* 
+::-webkit-scrollbar {
+  width: 1px; 
+  height: 1px;
+}
+
+
+::-moz-scrollbar {
+  width: 1px;
+}
+ */

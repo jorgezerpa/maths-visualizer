@@ -5,6 +5,7 @@ let prevMouseX = window.scrollX
 let prevMouseY = window.scrollY
 let prevMouseDirectionX=0
 let prevMouseDirectionY=0
+let scaleFactor = 1
 
 
 class Canvas {
@@ -16,6 +17,7 @@ class Canvas {
   isDragging:boolean
   startDragCoords:{x:number|null, y:number|null}
   startDragScroll:{x:number|null, y:number|null}
+  scale:number
 
   constructor(){
     this.canvas = document.getElementById("canvas") as HTMLCanvasElement
@@ -26,8 +28,9 @@ class Canvas {
     this.background = "#000000"
     this.startDragCoords = {x:null, y:null}
     this.startDragScroll = { x:window.scrollX, y:window.scrollY }
-    this.handlePan = this.handlePan.bind(this) // on listenner, this->target, with bind, this -> class
+    this.scale = 1
 
+    this.handlePan = this.handlePan.bind(this) // on listenner, this->target, with bind, this -> class
     this.initialize()
     this.draw()
   }
@@ -35,12 +38,18 @@ class Canvas {
   initialize(){
     this.canvas.width = this.width
     this.canvas.height = this.height
+    this.ctx.translate(this.canvas.width/2, this.canvas.height/2);
     this.handleMouseDown()
     this.handleMouseUp()
+    this.handleMouseWheel()
+    
+    const centerX = this.width / 2;
+    const centerY = this.height / 2;
+    window.scrollTo(centerX-window.innerWidth/2, centerY-window.innerHeight/2);
   }
 
-  draw(){
-    var gradient = this.ctx.createLinearGradient(0, 0, this.canvas.width, this.canvas.height);
+  draw() {
+    let gradient = this.ctx.createLinearGradient(-this.canvas.width/2, -this.canvas.height/2,this.canvas.width, this.canvas.height);
     gradient.addColorStop(0.0, "red");
     gradient.addColorStop(0.1, "green");
     gradient.addColorStop(0.2, "blue");
@@ -54,7 +63,7 @@ class Canvas {
     gradient.addColorStop(1, "purple");
   
     this.ctx.fillStyle = gradient;
-    this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+    this.ctx.fillRect(-this.canvas.width/2, -this.canvas.height/2, this.canvas.width, this.canvas.height);
   }
 
   handleMouseDown(){
@@ -112,48 +121,31 @@ class Canvas {
       }
   }
 
+  handleMouseWheel(){
+    this.canvas.addEventListener('wheel', (e: WheelEvent) => {
+      e.preventDefault();
+      const wheelDirection = getMouseWheelDirection(e)
+      this.ctx.save(); // guardar contexto antes de escalar
+      
+      this.ctx.clearRect(-this.canvas.width/2, -this.canvas.height/2, this.canvas.width, this.canvas.height)
+      scaleFactor = wheelDirection === -1 ? scaleFactor/1.1 : scaleFactor*1.1
+      this.ctx.scale(scaleFactor,scaleFactor); // Scale coordinates system
 
-
-}
-
-
-const sketch = new Canvas()
-drawCircles(sketch.ctx)
-
-
-function drawCircles(ctx: CanvasRenderingContext2D) {
-  // Definir el radio del círculo
-  const radius = 200;
-
-  // Definir los colores para los círculos
-  const colors = ['red', 'orange', 'yellow', 'green', 'blue', 'indigo', 'violet'];
-
-  // Dibujar los círculos en la cuadrícula
-  for (let i = 0; i < 30; i++) {
-    for (let j = 0; j < 30; j++) {
-      // Calcular la posición del centro del círculo
-      const x = i * (radius * 2 + 10) + radius + 5;
-      const y = j * (radius * 2 + 10) + radius + 5;
-
-      // Seleccionar un color aleatorio de la lista de colores
-      const color = colors[Math.floor(Math.random() * colors.length)];
-
-      // Dibujar el círculo
-      ctx.beginPath();
-      ctx.arc(x, y, radius, 0, 2 * Math.PI);
-      ctx.fillStyle = color;
-      ctx.fill();
-      ctx.closePath();
-    }
+      this.draw()
+      this.ctx.restore(); // Restaura el contexto al estado anterior
+    });
   }
+
+
 }
+
+
+new Canvas()
 
 
 
 
 // UTILS 
-
-
 function getMouseMoveXDirection(e: MouseEvent): number {
   let currentMouseX = e.clientX
   if(currentMouseX>prevMouseX) {
@@ -180,6 +172,13 @@ function getMouseMoveYDirection(e: MouseEvent): number {
   return 0
 }
 
+function getMouseWheelDirection(e:WheelEvent) {
+  let delta = Math.max(-1, Math.min(1, (-e.deltaY || -e.detail)));
+  return delta > 0 ? 1 : -1;
+}
 
 
 
+
+
+    
