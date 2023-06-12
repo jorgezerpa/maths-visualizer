@@ -9,6 +9,8 @@ let scaleFactor = 1
 
 
 class Canvas {
+
+
   canvas:HTMLCanvasElement;
   width:number;
   height:number;
@@ -17,7 +19,6 @@ class Canvas {
   isDragging:boolean
   startDragCoords:{x:number|null, y:number|null}
   startDragScroll:{x:number|null, y:number|null}
-  scale:number
 
   constructor(){
     this.canvas = document.getElementById("canvas") as HTMLCanvasElement
@@ -28,7 +29,6 @@ class Canvas {
     this.background = "#000000"
     this.startDragCoords = {x:null, y:null}
     this.startDragScroll = { x:window.scrollX, y:window.scrollY }
-    this.scale = 1
 
     this.handlePan = this.handlePan.bind(this) // on listenner, this->target, with bind, this -> class
     this.initialize()
@@ -42,6 +42,8 @@ class Canvas {
     this.handleMouseDown()
     this.handleMouseUp()
     this.handleMouseWheel()
+
+    this.ctx.scale(1,-1);
     
     const centerX = this.width / 2;
     const centerY = this.height / 2;
@@ -49,21 +51,13 @@ class Canvas {
   }
 
   draw() {
-    let gradient = this.ctx.createLinearGradient(-this.canvas.width/2, -this.canvas.height/2,this.canvas.width, this.canvas.height);
-    gradient.addColorStop(0.0, "red");
-    gradient.addColorStop(0.1, "green");
-    gradient.addColorStop(0.2, "blue");
-    gradient.addColorStop(0.3, "red");
-    gradient.addColorStop(0.4, "green");
-    gradient.addColorStop(0.5, "blue");
-    gradient.addColorStop(0.6, "red");
-    gradient.addColorStop(0.7, "green");
-    gradient.addColorStop(0.8, "blue");
-    gradient.addColorStop(0.9, "red");
-    gradient.addColorStop(1, "purple");
-  
-    this.ctx.fillStyle = gradient;
-    this.ctx.fillRect(-this.canvas.width/2, -this.canvas.height/2, this.canvas.width, this.canvas.height);
+    this.ctx.strokeStyle = "red";
+    this.ctx.lineWidth = 1;
+    
+    this.ctx.moveTo(0, 0);
+    this.ctx.lineTo(0, 200);
+    this.ctx.stroke();
+
   }
 
   handleMouseDown(){
@@ -85,7 +79,7 @@ class Canvas {
 
   handlePan(e:MouseEvent){
       if(this.isDragging && this.startDragCoords.x && this.startDragCoords.y){
-        let mouseDirecction = {x:getMouseMoveXDirection(e), y:getMouseMoveYDirection(e)}
+        let mouseDirecction = getMouseDirection(e)
         
         const deltaMouse = { x: Math.abs(this.startDragCoords.x-e.clientX), y:Math.abs(this.startDragCoords.y - e.clientY) }
         // if change direction reset startDragCoords
@@ -126,10 +120,10 @@ class Canvas {
       e.preventDefault();
       const wheelDirection = getMouseWheelDirection(e)
       this.ctx.save(); // guardar contexto antes de escalar
-      
+       
       this.ctx.clearRect(-this.canvas.width/2, -this.canvas.height/2, this.canvas.width, this.canvas.height)
       scaleFactor = wheelDirection === -1 ? scaleFactor/1.1 : scaleFactor*1.1
-      this.ctx.scale(scaleFactor,scaleFactor); // Scale coordinates system
+      this.ctx.scale(scaleFactor,-scaleFactor); // Scale coordinates system
 
       this.draw()
       this.ctx.restore(); // Restaura el contexto al estado anterior
@@ -140,41 +134,56 @@ class Canvas {
 }
 
 
-new Canvas()
+const sketch = new Canvas()
 
 
 
 
 // UTILS 
-function getMouseMoveXDirection(e: MouseEvent): number {
+function getMouseDirection(e: MouseEvent):{x:number, y:number}{
   let currentMouseX = e.clientX
+  let currentMouseY = e.clientY
+  let xDirection = 0
+  let yDirection = 0
   if(currentMouseX>prevMouseX) {
-    prevMouseX = currentMouseX
-    return 1
+    xDirection = 1
   } 
   if(currentMouseX<prevMouseX) {
-    prevMouseX = currentMouseX
-    return -1
+    xDirection = -1
   } 
-  return 0
-}
-
-function getMouseMoveYDirection(e: MouseEvent): number {
-  let currentMouseY = e.clientY
   if(currentMouseY>prevMouseY) {
-    prevMouseY = currentMouseY
-    return -1
+    yDirection = -1
   } 
   if(currentMouseY<prevMouseY) {
-    prevMouseY = currentMouseY
-    return 1
+    yDirection = 1
   } 
-  return 0
+  prevMouseX = currentMouseX
+  prevMouseY = currentMouseY
+  return {x:xDirection, y:yDirection}
+ 
 }
 
 function getMouseWheelDirection(e:WheelEvent) {
   let delta = Math.max(-1, Math.min(1, (-e.deltaY || -e.detail)));
   return delta > 0 ? 1 : -1;
+}
+
+function drawLine(ctx:CanvasRenderingContext2D, ypos:number) {
+  // Definimos el punto de inicio y fin de la línea
+  const startX = 0;
+  const startY = 0;
+  const endX = 200;
+  const endY = ypos;
+
+  // Configuramos el estilo de la línea
+  ctx.strokeStyle = "blue";
+  ctx.lineWidth = 1;
+
+  // Dibujamos la línea
+  ctx.beginPath();
+  ctx.moveTo(startX, startY);
+  ctx.lineTo(endX, endY);
+  ctx.stroke();
 }
 
 
